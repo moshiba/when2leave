@@ -138,11 +138,14 @@ uniq_stop_id = df_stop_times.lazy().select(
 # Stations of interest
 q_stops = (
     pl.scan_csv("mmt_gtfs/stops.txt")  #
-    .filter(pl.col("stop_id").is_in(uniq_stop_id))  # my routes + eastbound
-    .filter((pl.col("stop_lat") >= (START_LOC[0] - allowed_distance)) &
-            (pl.col("stop_lat") <= (START_LOC[0] + allowed_distance)) &
-            (pl.col("stop_lon") >= (START_LOC[1] - allowed_distance)) &
-            (pl.col("stop_lon") <= (START_LOC[1] + allowed_distance)))  #
+    # filters for my bus routes + that are eastbound
+    .filter(pl.col("stop_id").is_in(uniq_stop_id))  #
+    # spatial proximity calculation & filter
+    .with_columns(
+        ((pl.col("stop_lat") - START_LOC[0]).pow(2) +
+         (pl.col("stop_lon") -
+          START_LOC[1]).pow(2)).sqrt().alias("distance_from_start"))  #
+    .filter(pl.col("distance_from_start") <= allowed_distance)  #
 )
 
 #print(q_stops.profile())
