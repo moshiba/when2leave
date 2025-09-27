@@ -122,10 +122,8 @@ print(df_stop_times)
 print()
 
 # Locations of interest
-# longitude/latitude difference for 500 meters: 0.0045 degrees
-# MH door: 43.07285° N, 89.40726° W
-loc_oi = {"mh": (43.07285, -89.40726)}  # add OP?
-allowed_distance = 0.0045
+START_LOC = (43.07285, -89.40726)
+allowed_distance = 0.0045  # longitude/latitude difference for 500m
 
 uniq_stop_id = df_stop_times.lazy().select(
     "stop_id").unique().collect().to_series().implode()
@@ -133,23 +131,10 @@ uniq_stop_id = df_stop_times.lazy().select(
 q_stops = (
     pl.scan_csv("mmt_gtfs/stops.txt")  #
     .filter(pl.col("stop_id").is_in(uniq_stop_id))  # my routes + eastbound
-)
-
-# Concatenate multiple .when().then()
-geo_filter_expr = pl
-for name, coordinates in loc_oi.items():
-    geo_filter_expr = (
-        geo_filter_expr.when(
-            (pl.col("stop_lat") >= (coordinates[0] - allowed_distance)) &
-            (pl.col("stop_lat") <= (coordinates[0] + allowed_distance)) &
-            (pl.col("stop_lon") >= (coordinates[1] - allowed_distance)) &
-            (pl.col("stop_lon") <= (coordinates[1] + allowed_distance)))  #
-        .then(pl.lit(name))  #
-    )
-
-q_stops = (
-    q_stops.with_columns(geo_filter_expr.alias("stop_of_interest"))  #
-    .filter(pl.col("stop_of_interest").is_in(loc_oi.keys()))  #
+    .filter((pl.col("stop_lat") >= (START_LOC[0] - allowed_distance)) &
+            (pl.col("stop_lat") <= (START_LOC[0] + allowed_distance)) &
+            (pl.col("stop_lon") >= (START_LOC[1] - allowed_distance)) &
+            (pl.col("stop_lon") <= (START_LOC[1] + allowed_distance)))  #
 )
 
 #print(q_stops.profile())
