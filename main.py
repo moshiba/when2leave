@@ -70,8 +70,15 @@ for entity in feed.entity:
 
 routes_of_interest = ("A", "C", "R", "F", "38")
 
+q_routes = (
+    pl.scan_csv("mmt_gtfs/routes.txt", schema_overrides={"route_id": str})  #
+)
+df_routes = q_routes.collect()
+route_id_enum = pl.Enum(df_routes["route_id"])
+
 q_trips = (
-    pl.scan_csv("mmt_gtfs/trips.txt", schema_overrides={"route_id": str})  #
+    pl.scan_csv("mmt_gtfs/trips.txt",
+                schema_overrides={"route_id": route_id_enum})  #
     .filter(pl.col("route_id").is_in(routes_of_interest))  #
     .filter(pl.col("direction_id") == 1)  # eastbound
 )
@@ -128,6 +135,7 @@ allowed_distance = 0.0045  # longitude/latitude difference for 500m
 uniq_stop_id = df_stop_times.lazy().select(
     "stop_id").unique().collect().to_series().implode()
 
+# Stations of interest
 q_stops = (
     pl.scan_csv("mmt_gtfs/stops.txt")  #
     .filter(pl.col("stop_id").is_in(uniq_stop_id))  # my routes + eastbound
