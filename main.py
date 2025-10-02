@@ -26,36 +26,6 @@ GTFS files:
 - calendar_dates: exceptions for dates defined in calendar.txt
 - shapes: rules for mapping vehicle travel paths, aka route alignments
 """
-
-
-@dataclasses.dataclass
-class Stop:
-    name: str
-    route_id: str
-    #stop_id: int
-
-
-class StopsOfInterest:
-    stops = [
-        ## HOME
-        Stop("Orchard", "AF"),
-        Stop("Capitol Square", "AF"),
-        Stop("Paterson", "A"),
-        Stop("Baldwin", "A"),  # extra
-        # C
-        Stop("W Johnson / N Orchard", "C"),
-        Stop("E Wilson / S Butler", "C38"),
-        Stop("Williamson / S Blount", "C38"),  # extra
-        Stop("Jenifer / S Livingston", "C38"),  # extra
-        Stop("Jenifer / S Paterson", "C38"),
-        # 38
-        Stop("N Charter / University", "38"),
-        # R
-        Stop("W Johnson / N Orchard", "R"),
-        Stop("W Main / S Carroll", "R"),
-    ]
-
-
 """
 # Real time updates
 feed = gtfs_realtime_pb2.FeedMessage()
