@@ -122,7 +122,12 @@ print()
 
 # Locations of interest
 START_LOC = (43.07285, -89.40726)
-allowed_distance = 0.0045  # longitude/latitude difference for 500m
+
+decimal_degree_precision = 365221  # ft/degree
+walking_speed = 220  # ft/min
+allowed_walking_time = 5  # min
+allowed_distance = walking_speed * allowed_walking_time / decimal_degree_precision  # longitude/latitude difference
+print(allowed_distance)
 
 uniq_stop_id = df_stop_times.lazy().select(
     "stop_id").unique().collect().to_series().implode()
