@@ -48,6 +48,26 @@ q_routes = (
 df_routes = q_routes.collect()
 route_id_enum = pl.Enum(df_routes["route_id"])
 
+weekday_str = [
+    "monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"
+][EXAMPLE_DATETIME.weekday()]
+q_calendar = (
+    pl.scan_csv("mmt_gtfs/calendar.txt",
+                schema_overrides={
+                    "start_date": str,
+                    "end_date": str
+                })  #
+    .with_columns(
+        pl.col("start_date").str.to_date(format="%Y%m%d"),
+        pl.col("end_date").str.to_date(format="%Y%m%d"),
+    )  #
+    .filter(pl.col(weekday_str) == 1)  #
+    # TODO: validate start_date, end_date
+    #.select("service_id")  #
+)
+df_calendar = q_calendar.collect()
+print(df_calendar)
+
 q_trips = (
     pl.scan_csv("mmt_gtfs/trips.txt",
                 schema_overrides={"route_id": route_id_enum})  #
