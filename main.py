@@ -40,6 +40,8 @@ for entity in feed.entity:
 
 routes_of_interest = ("A", "C", "R", "F", "38")
 
+EXAMPLE_DATETIME = datetime.datetime.fromisoformat("2025-09-29T16:05:00")
+
 q_routes = (
     pl.scan_csv("mmt_gtfs/routes.txt", schema_overrides={"route_id": str})  #
 )
@@ -120,7 +122,7 @@ q_stops = (
 
 #print(q_stops.profile())
 
-pl.Config(tbl_rows=-1)
+#pl.Config(tbl_rows=-1)
 #pl.Config(tbl_cols=-1)
 
 df_stops = q_stops.collect()
@@ -129,4 +131,26 @@ print("@Stops of interest")
 print(df_stops)
 print()
 
-# Stations of interest
+# filter those upcoming trips to my station of interest
+
+time_lookahead = datetime.timedelta(minutes=40)
+time_margin = datetime.timedelta(minutes=1)
+
+tmp_earliest_arrival = (EXAMPLE_DATETIME - time_margin).time()
+tmp_latest_arrival = (EXAMPLE_DATETIME + time_lookahead).time()
+
+df_upcoming_trips = (
+    df_stop_times.lazy()  #
+    .filter((pl.col("arrival_time") >= tmp_earliest_arrival) &
+            (pl.col("arrival_time") <= tmp_latest_arrival))  #
+    .filter(pl.col("stop_id").is_in(df_stops["stop_id"].implode()))  #
+    .join(df_stops.lazy().select("stop_id", "distance_from_start"),
+          on="stop_id")  #
+    .sort("distance_from_start")  #
+    .unique("trip_id", keep="first",
+            maintain_order=True)  # TODO: drop maintain_order
+    .join(df_trips.lazy().select("trip_id", "route_id"), on="trip_id")  #
+).collect()
+
+pl.Config(tbl_rows=-1)
+print(df_upcoming_trips)
